@@ -1,0 +1,51 @@
+﻿@page "/"
+@using System.Text.Json
+@using System.Text.Json.Nodes
+@using SecretsConverterApp.Services
+
+<div class="container">
+    <p>Converts secrets.json to Azure App Service Advanced Edit format. SlotSetting defaults to false.</p>
+    <div class="form-group">
+        <label>Input JSON (paste secrets.json):</label>
+        <textarea class="form-control" @bind="inputJson" rows="10" placeholder="Paste your secrets.json here"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Platform:</label>
+        <select @bind="platform" class="form-control">
+            <option value="Linux">Linux</option>
+            <option value="Windows">Windows</option>
+        </select>
+    </div>
+    <button class="btn btn-primary" @onclick="TransformJson">Convert</button>
+    <div class="form-group">
+        <label>Output JSON (Azure App Service Advanced Edit):</label>
+        <textarea class="form-control" @bind="outputJson" rows="10" readonly placeholder="Converted JSON will appear here"></textarea>
+    </div>
+    <button class="btn btn-secondary" @onclick="CopyToClipboard">Copy to Clipboard</button>
+</div>
+
+@code {
+    private string inputJson = "";
+    private string outputJson = "";
+    private string platform = "Linux";
+    private readonly JsonTransformer transformer = new JsonTransformer();
+    [Inject] IJSRuntime JSRuntime { get; set; }
+
+    private void TransformJson()
+    {
+        try
+        {
+            outputJson = transformer.TransformSecretsToAzureAppService(inputJson, platform);
+        }
+        catch (Exception ex)
+        {
+            outputJson = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task CopyToClipboard()
+    {
+        // Note: Clipboard API may require JavaScript interop setup
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", outputJson);
+    }
+}
